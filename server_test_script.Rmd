@@ -1,0 +1,86 @@
+---
+title: "Test"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    vertical_layout: scroll
+    runtime: shiny
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(shiny)
+library(tidyverse)
+library(dplyr)
+library(shinyWidgets)
+```
+
+QC Rejection 
+===============================================================================
+
+Column
+-----------------------------------------------------------------------
+
+```{r}
+fileData <- reactiveFileReader(1000, NULL, 'flexdeshboard_reactivity_test.csv', read.csv)
+
+
+########################################################################################################################### UI
+fluidPage()
+
+progressBar(
+      id = "pb2",
+      value = 0,
+      total = 100,
+      title = "",
+      display_pct = TRUE
+    )
+
+
+####################################################################################################################### Server
+# Anything that calls autoInvalidate will automatically invalidate
+# every 2 seconds.
+autoInvalidate <- reactiveTimer(2000)
+
+observe({
+  # Invalidate and re-execute this reactive expression every time the
+  # timer fires.
+  autoInvalidate()
+  
+  # update progress bar function, value return to the csv file
+  updateProgressBar(
+    session = session,
+    id = "pb2",
+    value = fileData()$Number, total = 100
+  )
+})
+```
+
+###
+
+```{r}
+library(shinydashboard)
+
+ui <- dashboardPage(
+  dashboardHeader(disable = TRUE),
+  dashboardSidebar(disable = TRUE),
+  dashboardBody(
+    fluidRow(
+      # Dynamic valueBoxes
+      valueBoxOutput("progressBox")
+    )
+  )
+ )
+
+server <- function(input, output) {
+  
+   output$progressBox <- renderValueBox({
+    valueBox(
+      fileData()$Number, "Progress", icon = icon("list"),
+      color = "purple"
+    )
+  })
+}
+
+shinyApp(ui, server)
+```
